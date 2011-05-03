@@ -1,0 +1,13 @@
+ZTE Blade 2.6.35.11-perf.
+
+Important Info...
+
+1. TSL2771 Ambient Light Sensor (originally from 2.6.32) was in file taos.c. Now in 2.6.35 its tsl2771.c found here ... http://permalink.gmane.org/gmane.linux.kernel.iio/644, this is more updated - also, the location in the menuconfig is different, its now found in Device Drivers > Staging Drivers > Industrial I/O Support > TSL2771 (tsl2771.c)
+2. AKM8973 Compass Sensors (Originally from 2.6.32) was defined as CONFIG_SENSORS_AK8973, *BUT*, filename is akm8973.c. In .35 source, its still same name but updated code. This is found in Device Drivers > Misc
+3. Synaptics I2C RMI and Cypress I2C Touch Screen - only found in 2.6.32.... :S Have copied it across to .35 and found in Device Drivers > Input Device Support > TouchScreens
+4. mt9t11x - Camera Sensor support - only found in 2.6.32, copied it across to .35. This is BROKEN!!!!
+5. OV5642 - camera support functionality, no recent version found, apparently, its in the works for working with .35 version as per http://boundarydevices.com/blogs/omnivision-ov5642-camera-driver-for-linux
+6. LIS302DL - Acceleration Sensor driver - no updated version for .35, so copied it across from 2.6.32.
+
+Both points 4 and 5 above are broken SO NO CAMERA.. and anyway tis crappy! :P
+
