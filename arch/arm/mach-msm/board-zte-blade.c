@@ -74,12 +74,6 @@
 #include <linux/i2c-gpio.h>
 #include <linux/lis302dl.h> 
 
-#if defined( CONFIG_TOUCHSCREEN_MSM_LEGACY)
-#include <mach/msm_touch.h>
-#elif defined( CONFIG_TOUCHSCREEN_MSM)
-#include <mach/msm_ts.h>
-#endif
-
 #define MSM_PMEM_MDP_SIZE	0x1B76000
 #define MSM_PMEM_ADSP_SIZE	0xAE4000
 #define MSM_PMEM_AUDIO_SIZE	0x5B000
@@ -1538,26 +1532,6 @@ static struct platform_device msm_camera_sensor_ov5642 = {
 #endif /* CONFIG_OV5642 */
 #endif /* CONFIG_MSM_CAMERA */
 
-#if defined( CONFIG_TOUCHSCREEN_MSM_LEGACY)
-struct msm_ts_platform_data msm_tssc_pdata ={
-	.x_max = 239,
-	.y_max = 319,
-	.pressure_max =255,
-};
-#elif defined( CONFIG_TOUCHSCREEN_MSM)
-struct msm_ts_platform_data msm_tssc_pdata = {
-	.min_x = 0,
-	.max_x = 239,
-	.min_y = 0,
-	.max_y = 319,
-	.min_press =0,
-	.max_press =255,
-	.inv_y = 955,
-};
-#endif /* defined(CONFIG_TOUCHSCREEN_MSM_LEGACY) */
-
-
-
 static u32 msm_calculate_batt_capacity(u32 current_voltage);
 
 typedef struct 
@@ -1690,10 +1664,6 @@ static struct platform_device *devices[] __initdata = {
 	&aux2_i2c_gpio_device,  
 	&smc91x_device,
 
-#if defined( CONFIG_TOUCHSCREEN_MSM_LEGACY) || defined( CONFIG_TOUCHSCREEN_MSM)
-	&msm_device_tssc,
-#endif /* defined( CONFIG_TOUCHSCREEN_MSM_LEGACY) || defined( CONFIG_TOUCHSCREEN_MSM) */
-
 	&android_pmem_kernel_ebi1_device,
 	&android_pmem_device,
 	&android_pmem_adsp_device,
@@ -1710,9 +1680,7 @@ static struct platform_device *devices[] __initdata = {
 	&msm_device_adspdec,
 
 	&msm_bluesleep_device,
-#ifdef CONFIG_ARCH_MSM7X27
 	&msm_device_kgsl,
-#endif /* CONFIG_ARCH_MSM7X27 */
 
 #ifdef CONFIG_MT9T11X
     &msm_camera_sensor_mt9t11x,
@@ -2292,9 +2260,6 @@ static void __init msm7x2x_init(void)
 	kgsl_pdata.pt_max_count = 1;
 #endif /* CONFIG_KGSL_PER_PROCESS_PAGE_TABLE */
 #endif
-#if defined( CONFIG_TOUCHSCREEN_MSM_LEGACY) || defined( CONFIG_TOUCHSCREEN_MSM)
-	msm_device_tssc.dev.platform_data = &msm_tssc_pdata;
-#endif /* defined( CONFIG_TOUCHSCREEN_MSM_LEGACY) || defined( CONFIG_TOUCHSCREEN_MSM) */
 
 	usb_mpp_init();
 
@@ -2348,13 +2313,6 @@ static void __init msm7x2x_init(void)
 	i2c_register_board_info(1, aux_i2c_devices, ARRAY_SIZE(aux_i2c_devices));
 
 	i2c_register_board_info(2, aux2_i2c_devices, ARRAY_SIZE(aux2_i2c_devices));
-
-#ifdef CONFIG_SURF_FFA_GPIO_KEYPAD
-	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa())
-		platform_device_register(&keypad_device_7k_ffa);
-	else
-		platform_device_register(&keypad_device_surf);
-#endif /* CONFIG_SURF_FFA_GPIO_KEYPAD */
 
 	lcdc_lead_gpio_init();
 	
@@ -2470,15 +2428,13 @@ static void __init msm_msm7x2x_allocate_memory_regions(void)
 		pr_info("allocating %lu bytes at %p (%lx physical) for kernel"
 			" ebi1 pmem arena\n", size, addr, __pa(addr));
 	}
-#ifdef CONFIG_ARCH_MSM7X27
+
 	size = MSM_GPU_PHYS_SIZE;
 	addr = alloc_bootmem(size);
 	kgsl_resources[1].start = __pa(addr);
 	kgsl_resources[1].end = kgsl_resources[1].start + size - 1;
 	pr_info("allocating %lu bytes (at %lx physical) for KGSL\n",
 		size , MSM_GPU_PHYS_START_ADDR);
-
-#endif /* CONFIG_ARCH_MSM7X27 */
 
 	pr_info("length = %d ++ \n", len);
 
@@ -2541,55 +2497,6 @@ int get_ftm_from_tag(void)
 	return g_zte_ftm_flag_fixup;
 }
 EXPORT_SYMBOL(get_ftm_from_tag);
-
-
-MACHINE_START(MSM7X27_SURF, "QCT MSM7x27 SURF")
-#ifdef CONFIG_MSM_DEBUG_UART
-	.phys_io        = MSM_DEBUG_UART_PHYS,
-	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
-#endif /* CONFIG_MSM_DEBUG_UART */
-	.boot_params	= PHYS_OFFSET + 0x100,
-	.map_io		= msm7x2x_map_io,
-	.init_irq	= msm7x2x_init_irq,
-	.init_machine	= msm7x2x_init,
-	.timer		= &msm_timer,
-MACHINE_END
-
-MACHINE_START(MSM7X27_FFA, "QCT MSM7x27 FFA")
-#ifdef CONFIG_MSM_DEBUG_UART
-	.phys_io        = MSM_DEBUG_UART_PHYS,
-	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
-#endif /* CONFIG_MSM_DEBUG_UART */
-	.boot_params	= PHYS_OFFSET + 0x100,
-	.map_io		= msm7x2x_map_io,
-	.init_irq	= msm7x2x_init_irq,
-	.init_machine	= msm7x2x_init,
-	.timer		= &msm_timer,
-MACHINE_END
-
-MACHINE_START(MSM7X25_SURF, "QCT MSM7x25 SURF")
-#ifdef CONFIG_MSM_DEBUG_UART
-	.phys_io        = MSM_DEBUG_UART_PHYS,
-	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
-#endif /* CONFIG_MSM_DEBUG_UART */
-	.boot_params	= PHYS_OFFSET + 0x100,
-	.map_io		= msm7x2x_map_io,
-	.init_irq	= msm7x2x_init_irq,
-	.init_machine	= msm7x2x_init,
-	.timer		= &msm_timer,
-MACHINE_END
-
-MACHINE_START(MSM7X25_FFA, "QCT MSM7x25 FFA")
-#ifdef CONFIG_MSM_DEBUG_UART
-	.phys_io        = MSM_DEBUG_UART_PHYS,
-	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
-#endif /* CONFIG_MSM_DEBUG_UART */
-	.boot_params	= PHYS_OFFSET + 0x100,
-	.map_io		= msm7x2x_map_io,
-	.init_irq	= msm7x2x_init_irq,
-	.init_machine	= msm7x2x_init,
-	.timer		= &msm_timer,
-MACHINE_END
 
 MACHINE_START(BLADE, "blade ZTE handset")
 #ifdef CONFIG_MSM_DEBUG_UART
