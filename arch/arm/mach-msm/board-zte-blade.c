@@ -15,7 +15,6 @@
  */
 
 #include <linux/kernel.h>
-#include <linux/gpio.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/input.h>
@@ -38,6 +37,7 @@
 #include <asm/mach/mmc.h>
 #include <mach/vreg.h>
 #include <mach/mpp.h>
+#include <mach/gpio.h>
 #include <mach/board.h>
 #include <mach/pmic.h>
 #include <mach/msm_iomap.h>
@@ -443,6 +443,7 @@ static int msm_otg_rpc_phy_reset(void __iomem *regs)
 static struct msm_otg_platform_data msm_otg_pdata = {
 	.rpc_connect	= hsusb_rpc_connect,
 	.pmic_vbus_notif_init         = msm_hsusb_pmic_notif_init,
+	
 	.chg_vbus_draw		 = hsusb_chg_vbus_draw,
 	.chg_connected		 = hsusb_chg_connected,
 	.chg_init		 = hsusb_chg_init,
@@ -1631,6 +1632,9 @@ static struct platform_device *devices[] __initdata = {
      * Put it before MMC host controller in worst case 
      */
 	&msm_wlan_ar6000_pm_device,
+//#if !defined(CONFIG_MSM_SERIAL_DEBUGGER)
+//	&msm_device_uart3,
+//#endif
 
 	&msm_device_smd,
 	&msm_device_dmov,
@@ -2207,6 +2211,10 @@ static void __init msm7x2x_init(void)
 
 	platform_add_devices(devices, ARRAY_SIZE(devices));
 
+//#if defined(CONFIG_MSM_SERIAL_DEBUGGER)
+//	msm_serial_debug_init(MSM_UART3_PHYS, INT_UART3,
+//			&msm_device_uart3.dev, 1);
+//#endif
 	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa()) {
 		smc91x_resources[0].start = 0x98000300;
 		smc91x_resources[0].end = 0x980003ff;
@@ -2314,6 +2322,12 @@ static void __init msm7x2x_init(void)
 
 	i2c_register_board_info(2, aux2_i2c_devices, ARRAY_SIZE(aux2_i2c_devices));
 
+#ifdef CONFIG_SURF_FFA_GPIO_KEYPAD
+	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa())
+		platform_device_register(&keypad_device_7k_ffa);
+	else
+		platform_device_register(&keypad_device_surf);
+#endif
 	lcdc_lead_gpio_init();
 	
 	msm_fb_add_devices();
@@ -2460,7 +2474,7 @@ static void __init msm7x2x_map_io(void)
 	msm_msm7x2x_allocate_memory_regions();
 
 #ifdef CONFIG_CACHE_L2X0
-	l2x0_init(MSM_L2CC_BASE, 0x0006801B, 0xfe000000);
+	l2x0_init(MSM_L2CC_BASE, 0x00068012, 0xfe000000);
 #endif /* CONFIG_CACHE_L2X0 */
 }
 
@@ -2497,6 +2511,54 @@ int get_ftm_from_tag(void)
 	return g_zte_ftm_flag_fixup;
 }
 EXPORT_SYMBOL(get_ftm_from_tag);
+
+MACHINE_START(MSM7X27_SURF, "QCT MSM7x27 SURF")
+#ifdef CONFIG_MSM_DEBUG_UART
+	.phys_io        = MSM_DEBUG_UART_PHYS,
+	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
+#endif
+	.boot_params	= PHYS_OFFSET + 0x100,
+	.map_io		= msm7x2x_map_io,
+	.init_irq	= msm7x2x_init_irq,
+	.init_machine	= msm7x2x_init,
+	.timer		= &msm_timer,
+MACHINE_END
+
+MACHINE_START(MSM7X27_FFA, "QCT MSM7x27 FFA")
+#ifdef CONFIG_MSM_DEBUG_UART
+	.phys_io        = MSM_DEBUG_UART_PHYS,
+	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
+#endif
+	.boot_params	= PHYS_OFFSET + 0x100,
+	.map_io		= msm7x2x_map_io,
+	.init_irq	= msm7x2x_init_irq,
+	.init_machine	= msm7x2x_init,
+	.timer		= &msm_timer,
+MACHINE_END
+
+MACHINE_START(MSM7X25_SURF, "QCT MSM7x25 SURF")
+#ifdef CONFIG_MSM_DEBUG_UART
+	.phys_io        = MSM_DEBUG_UART_PHYS,
+	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
+#endif
+	.boot_params	= PHYS_OFFSET + 0x100,
+	.map_io		= msm7x2x_map_io,
+	.init_irq	= msm7x2x_init_irq,
+	.init_machine	= msm7x2x_init,
+	.timer		= &msm_timer,
+MACHINE_END
+
+MACHINE_START(MSM7X25_FFA, "QCT MSM7x25 FFA")
+#ifdef CONFIG_MSM_DEBUG_UART
+	.phys_io        = MSM_DEBUG_UART_PHYS,
+	.io_pg_offst    = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
+#endif
+	.boot_params	= PHYS_OFFSET + 0x100,
+	.map_io		= msm7x2x_map_io,
+	.init_irq	= msm7x2x_init_irq,
+	.init_machine	= msm7x2x_init,
+	.timer		= &msm_timer,
+MACHINE_END
 
 MACHINE_START(BLADE, "blade ZTE handset")
 #ifdef CONFIG_MSM_DEBUG_UART
