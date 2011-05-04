@@ -2033,7 +2033,7 @@ static int mt9t11x_sensor_probe_init(const struct msm_camera_sensor_info *data)
         goto probe_init_fail;
     }
 
-    mt9t11x_ctrl = kzalloc(sizeof(struct mt9t11x_ctrl_t), GFP_KERNEL);
+    mt9t11x_ctrl = (struct mt9t11x_ctrl_t *)kzalloc(sizeof(struct mt9t11x_ctrl_t), GFP_KERNEL);
     if (!mt9t11x_ctrl)
     {
         CCRT("%s: kzalloc failed!\n", __func__);

@@ -570,6 +570,75 @@ struct msm_snapshot_pp_status {
 #define CAMERA_EFFECT_BLACKBOARD	7
 #define CAMERA_EFFECT_AQUA		8
 #define CAMERA_EFFECT_MAX		9
+#define CAMERA_WB_MODE_AWB              1
+#define CAMERA_WB_MODE_CUSTOM           2
+#define CAMERA_WB_MODE_INCANDESCENT     3
+#define CAMERA_WB_MODE_FLUORESCENT      4
+#define CAMERA_WB_MODE_SUNLIGHT         5
+#define CAMERA_WB_MODE_CLOUDY           6
+#define CAMERA_WB_MODE_NIGHT            7
+#define CAMERA_WB_MODE_SHADE            8
+#define CAMERA_WB_MODE_MAX              9
+#define CAMERA_BRIGHTNESS_0             0
+#define CAMERA_BRIGHTNESS_1             1
+#define CAMERA_BRIGHTNESS_2             2
+#define CAMERA_BRIGHTNESS_3             3
+#define CAMERA_BRIGHTNESS_4             4
+#define CAMERA_BRIGHTNESS_5             5
+#define CAMERA_BRIGHTNESS_6             6
+#define CAMERA_BRIGHTNESS_MAX           7
+
+/* Contrast */
+#define CAMERA_CONTRAST_0               0
+#define CAMERA_CONTRAST_1               1
+#define CAMERA_CONTRAST_2               2
+#define CAMERA_CONTRAST_3               3
+#define CAMERA_CONTRAST_4               4
+#define CAMERA_CONTRAST_MAX             5
+
+/* Saturation */
+#define CAMERA_SATURATION_0             0
+#define CAMERA_SATURATION_1             1
+#define CAMERA_SATURATION_2             2
+#define CAMERA_SATURATION_3             3
+#define CAMERA_SATURATION_4             4
+#define CAMERA_SATURATION_MAX           5
+
+
+#define CAMERA_EXPOSURE_0               0
+#define CAMERA_EXPOSURE_1               1
+#define CAMERA_EXPOSURE_2               2
+#define CAMERA_EXPOSURE_3               3
+#define CAMERA_EXPOSURE_4               4
+#define CAMERA_EXPOSURE_MAX             5
+
+
+#define CAMERA_ISO_SET_AUTO             0
+#define CAMERA_ISO_SET_HJR              1
+#define CAMERA_ISO_SET_100              2
+#define CAMERA_ISO_SET_200              3
+#define CAMERA_ISO_SET_400              4
+#define CAMERA_ISO_SET_800              5
+#define CAMERA_ISO_SET_MAX              6
+
+#define CAMERA_ANTIBANDING_SET_OFF      0
+#define CAMERA_ANTIBANDING_SET_60HZ     1
+#define CAMERA_ANTIBANDING_SET_50HZ     2
+#define CAMERA_ANTIBANDING_SET_AUTO     3
+#define CAMERA_ANTIBANDING_MAX          4
+
+#define CAMERA_SHARPNESS_0              0
+#define CAMERA_SHARPNESS_1              1
+#define CAMERA_SHARPNESS_2              2
+#define CAMERA_SHARPNESS_3              3
+#define CAMERA_SHARPNESS_4              4
+#define CAMERA_SHARPNESS_5              5
+#define CAMERA_SHARPNESS_6              6
+#define CAMERA_SHARPNESS_7              7
+#define CAMERA_SHARPNESS_8              8
+#define CAMERA_SHARPNESS_9              9
+#define CAMERA_SHARPNESS_10             10
+#define CAMERA_SHARPNESS_MAX            11
 
 struct sensor_pict_fps {
 	uint16_t prevfps;
