@@ -400,7 +400,7 @@ static int hsusb_rpc_connect(int connect)
 #endif /* CONFIG_USB_MSM_OTG_72K */
 
 #ifdef CONFIG_USB_MSM_OTG_72K
-static struct vreg *vreg_3p3;
+struct vreg *vreg_3p3;
 static int msm_hsusb_ldo_init(int init)
 {
 	if (init) {
