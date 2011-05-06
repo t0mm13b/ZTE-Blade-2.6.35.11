@@ -477,7 +477,7 @@ static struct snd_endpoint snd_endpoints_list[] = {
 	SND(IN_S_SADC_OUT_HANDSET, 16),
 	SND(IN_S_SADC_OUT_SPEAKER_PHONE, 25),
 	SND(HEADSET_AND_SPEAKER, 26),
-	SND(CURRENT, 27),
+	SND(CURRENT, 28),
 };
 #undef SND
 
@@ -495,29 +495,17 @@ static struct platform_device msm_device_snd = {
 };
 
 #define DEC0_FORMAT ((1<<MSM_ADSP_CODEC_MP3)| \
-	(1<<MSM_ADSP_CODEC_AAC)|(1<<MSM_ADSP_CODEC_WMA)| \
-	(1<<MSM_ADSP_CODEC_WMAPRO)|(1<<MSM_ADSP_CODEC_AMRWB)| \
-	(1<<MSM_ADSP_CODEC_AMRNB)|(1<<MSM_ADSP_CODEC_WAV)| \
-	(1<<MSM_ADSP_CODEC_ADPCM)|(1<<MSM_ADSP_CODEC_YADPCM)| \
-	(1<<MSM_ADSP_CODEC_EVRC)|(1<<MSM_ADSP_CODEC_QCELP))
-#define DEC1_FORMAT ((1<<MSM_ADSP_CODEC_MP3)| \
-	(1<<MSM_ADSP_CODEC_AAC)|(1<<MSM_ADSP_CODEC_WMA)| \
-	(1<<MSM_ADSP_CODEC_WMAPRO)|(1<<MSM_ADSP_CODEC_AMRWB)| \
-	(1<<MSM_ADSP_CODEC_AMRNB)|(1<<MSM_ADSP_CODEC_WAV)| \
-	(1<<MSM_ADSP_CODEC_ADPCM)|(1<<MSM_ADSP_CODEC_YADPCM)| \
-	(1<<MSM_ADSP_CODEC_EVRC)|(1<<MSM_ADSP_CODEC_QCELP))
-#define DEC2_FORMAT ((1<<MSM_ADSP_CODEC_MP3)| \
-	(1<<MSM_ADSP_CODEC_AAC)|(1<<MSM_ADSP_CODEC_WMA)| \
-	(1<<MSM_ADSP_CODEC_WMAPRO)|(1<<MSM_ADSP_CODEC_AMRWB)| \
-	(1<<MSM_ADSP_CODEC_AMRNB)|(1<<MSM_ADSP_CODEC_WAV)| \
-	(1<<MSM_ADSP_CODEC_ADPCM)|(1<<MSM_ADSP_CODEC_YADPCM)| \
-	(1<<MSM_ADSP_CODEC_EVRC)|(1<<MSM_ADSP_CODEC_QCELP))
-#define DEC3_FORMAT ((1<<MSM_ADSP_CODEC_MP3)| \
-	(1<<MSM_ADSP_CODEC_AAC)|(1<<MSM_ADSP_CODEC_WMA)| \
-	(1<<MSM_ADSP_CODEC_WMAPRO)|(1<<MSM_ADSP_CODEC_AMRWB)| \
-	(1<<MSM_ADSP_CODEC_AMRNB)|(1<<MSM_ADSP_CODEC_WAV)| \
-	(1<<MSM_ADSP_CODEC_ADPCM)|(1<<MSM_ADSP_CODEC_YADPCM)| \
-	(1<<MSM_ADSP_CODEC_EVRC)|(1<<MSM_ADSP_CODEC_QCELP))
+		(1<<MSM_ADSP_CODEC_AAC)|(1<<MSM_ADSP_CODEC_WMA)| \
+		(1<<MSM_ADSP_CODEC_WMAPRO)|(1<<MSM_ADSP_CODEC_AMRWB)| \
+		(1<<MSM_ADSP_CODEC_AMRNB)|(1<<MSM_ADSP_CODEC_WAV)| \
+		(1<<MSM_ADSP_CODEC_ADPCM)|(1<<MSM_ADSP_CODEC_YADPCM)| \
+		(1<<MSM_ADSP_CODEC_EVRC)|(1<<MSM_ADSP_CODEC_QCELP))
+#define DEC1_FORMAT ((1<<MSM_ADSP_CODEC_WAV)|(1<<MSM_ADSP_CODEC_ADPCM)| \
+		(1<<MSM_ADSP_CODEC_YADPCM)|(1<<MSM_ADSP_CODEC_QCELP))
+#define DEC2_FORMAT ((1<<MSM_ADSP_CODEC_WAV)|(1<<MSM_ADSP_CODEC_ADPCM)| \
+		(1<<MSM_ADSP_CODEC_YADPCM)|(1<<MSM_ADSP_CODEC_QCELP))
+#define DEC3_FORMAT ((1<<MSM_ADSP_CODEC_WAV)|(1<<MSM_ADSP_CODEC_ADPCM)| \
+		(1<<MSM_ADSP_CODEC_YADPCM)|(1<<MSM_ADSP_CODEC_QCELP))
 #define DEC4_FORMAT (1<<MSM_ADSP_CODEC_MIDI)
 
 static unsigned int dec_concurrency_table[] = {
@@ -1059,21 +1047,15 @@ static struct platform_device msm_bluesleep_device = {
 static struct i2c_board_info i2c_devices[] = {
 
 #ifdef CONFIG_MT9T11X
-    
-#if defined(CONFIG_SENSOR_ADAPTER)
     {
         I2C_BOARD_INFO("mt9t11x", 0x7A >> 1),
     },
-#endif
 #endif /* CONFIG_MT9T11X */
 
 #ifdef CONFIG_OV5642
-    
-#if defined(CONFIG_SENSOR_ADAPTER)
     {
         I2C_BOARD_INFO("ov5642", 0x78 >> 1),
     },
-#endif	
 #endif /* CONFIG_OV5642 */
 
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI
@@ -1365,6 +1347,37 @@ static struct platform_device msm_batt_device = {
 	.name 		    = "msm-battery",
 	.id		    = -1,
 	.dev.platform_data  = &msm_psy_batt_data,
+};
+
+static struct i2c_board_info aux_i2c_devices[] = {
+	{
+		I2C_BOARD_INFO("si4708", 0x10),
+	},
+
+	{
+		.type = "taos",
+		.addr = 0x39,
+	},
+
+};
+
+static struct lis302dl_platform_data gsensor = {
+	.gpio_intr1 = 84,
+	.gpio_intr2 = 85,
+	.scale = 2 ,
+	.int_active_low = 1,
+};
+
+
+static struct i2c_board_info aux2_i2c_devices[] = {
+	{
+		I2C_BOARD_INFO("akm8973", 0x1c),
+	},
+	{
+		.type = "lis302dl",
+		.addr = 0x1d,
+		.platform_data = &gsensor,
+	},
 };
 
 
@@ -1810,6 +1823,11 @@ static void __init msm_device_i2c_init(void)
 	msm_device_i2c.dev.platform_data = &msm_i2c_pdata;
 }
 
+
+void msm_serial_debug_init(unsigned int base, int irq,
+		struct device *clk_device, int signal_irq);
+
+
 static void usb_mpp_init(void)
 {
 	unsigned rc;
@@ -1874,7 +1892,7 @@ static void __init msm7x2x_init(void)
 	/* The appropriate maximum replacement for 160000 is: */
 	/* msm7x2x_clock_data.max_axi_khz */
 	kgsl_3d0_pdata.pwr_data.pwrlevel[0].gpu_freq = 0;
-	kgsl_3d0_pdata.pwr_data.pwrlevel[0].bus_freq = 160000000;
+	kgsl_3d0_pdata.pwr_data.pwrlevel[0].bus_freq = 160000;
 	kgsl_3d0_pdata.pwr_data.init_level = 0;
 	kgsl_3d0_pdata.pwr_data.num_levels = 1;
 
@@ -1931,6 +1949,8 @@ static void __init msm7x2x_init(void)
 
 	msm_device_i2c_init();
 	i2c_register_board_info(0, i2c_devices, ARRAY_SIZE(i2c_devices));
+	i2c_register_board_info(1, aux_i2c_devices, ARRAY_SIZE(aux_i2c_devices));
+	i2c_register_board_info(2, aux2_i2c_devices, ARRAY_SIZE(aux2_i2c_devices));
 
 #ifdef CONFIG_SURF_FFA_GPIO_KEYPAD
 	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa())
@@ -2105,4 +2125,17 @@ MACHINE_START(BLADE, "blade ZTE handset")
 	.init_irq	= msm7x2x_init_irq,
 	.init_machine	= msm7x2x_init,
 	.timer		= &msm_timer,
+MACHINE_END
+
+MACHINE_START(MOONCAKE, "mooncake ZTE handset")
+#ifdef CONFIG_MSM_DEBUG_UART
+	.phys_io = MSM_DEBUG_UART_PHYS,
+	.io_pg_offst = ((MSM_DEBUG_UART_BASE) >> 18) & 0xfffc,
+#endif
+	.boot_params = PHYS_OFFSET + 0x100,
+	.fixup = zte_fixup,
+	.map_io = msm7x2x_map_io,
+	.init_irq = msm7x2x_init_irq,
+	.init_machine = msm7x2x_init,
+	.timer = &msm_timer,
 MACHINE_END
