@@ -400,7 +400,7 @@ static int hsusb_rpc_connect(int connect)
 #endif /* CONFIG_USB_MSM_OTG_72K */
 
 #ifdef CONFIG_USB_MSM_OTG_72K
-struct vreg *vreg_3p3;
+static struct vreg *vreg_3p3;
 static int msm_hsusb_ldo_init(int init)
 {
 	if (init) {
@@ -653,7 +653,6 @@ static struct platform_device hs_device = {
 		.platform_data = &hs_platform_data,
 	},
 };
-
 
 #define LCDC_CONFIG_PROC          21
 #define LCDC_UN_CONFIG_PROC       22
@@ -985,6 +984,25 @@ static void __init bt_power_init(void)
 #endif
 
 static struct resource kgsl_3d0_resources[] = {
+    {
+	.name = "kgsl_reg_memory",
+	.start = 0xA0000000,
+	.end = 0xA001ffff,
+	.flags = IORESOURCE_MEM,
+    },
+    {
+	.name   = "kgsl_phys_memory",
+	.start = 0,
+	.end = 0,
+	.flags = IORESOURCE_MEM,
+    },
+    {
+	.name = "kgsl_yamato_irq",
+	.start = INT_GRAPHICS,
+	.end = INT_GRAPHICS,
+	.flags = IORESOURCE_IRQ,
+    },
+#if 0    
 	{
 		.name  = KGSL_3D0_REG_MEMORY,
 		.start = 0xA0000000,
@@ -997,13 +1015,14 @@ static struct resource kgsl_3d0_resources[] = {
 		.end = INT_GRAPHICS,
 		.flags = IORESOURCE_IRQ,
 	},
+#endif	
 };
 
 static struct kgsl_device_platform_data kgsl_3d0_pdata;
 
 static struct platform_device msm_kgsl_3d0 = {
-	.name = "kgsl-3d0",
-	.id = 0,
+	.name = "kgsl",
+	.id = -1,
 	.num_resources = ARRAY_SIZE(kgsl_3d0_resources),
 	.resource = kgsl_3d0_resources,
 	.dev = {
@@ -1012,8 +1031,29 @@ static struct platform_device msm_kgsl_3d0 = {
 };
 
 static struct platform_device msm_device_pmic_leds = {
-	.name   = "pmic-leds",
-	.id = -1,
+    .name   = "pmic-leds-status",
+    .id = -1,
+};
+
+
+static struct gpio_led android_led_list[] = {
+    {
+	.name = "button-backlight",
+	.gpio = 35,
+    },
+};
+
+static struct gpio_led_platform_data android_leds_data = {
+    .num_leds	= ARRAY_SIZE(android_led_list),
+    .leds		= android_led_list,
+};
+
+static struct platform_device android_leds = {
+    .name		= "leds-gpio",
+    .id		= -1,
+    .dev		= {
+	.platform_data = &android_leds_data,
+    },
 };
 
 static struct resource bluesleep_resources[] = {
@@ -1043,6 +1083,15 @@ static struct platform_device msm_bluesleep_device = {
 	.num_resources	= ARRAY_SIZE(bluesleep_resources),
 	.resource	= bluesleep_resources,
 };
+
+#if CONFIG_SENSOR_LIS302DL
+static struct lis302dl_platform_data gsensor = {
+    .gpio_intr1 =  84,
+    .gpio_intr2 =  85,
+    .scale      =  2 ,
+    .int_active_low = 1,
+};
+#endif
 
 static struct i2c_board_info i2c_devices[] = {
 
@@ -1076,9 +1125,34 @@ static struct i2c_board_info i2c_devices[] = {
 	},
 #endif /* CONFIG_TOUCHSCREEN_CYPRESS_I2C_RMI */
 
+#if CONFIG_RADIO_SI470X
+	{
+	    I2C_BOARD_INFO("si4708", 0x10),
+	},
+#endif	/* CONFIG_TOUCHSCREEN_CYPRESS_I2C_RMI */
+
+#if CONFIG_SENSORS_TSL2771
+	{
+	    .type = "taos",
+	    .addr = 0x39,
+	},
+#endif	/* CONFIG_SENSORS_TSL2771 */
+
+#if CONFIG_SENSORS_AKM8973	
+	{
+	    I2C_BOARD_INFO("akm8973", 0x1c),
+	},
+#endif /* CONFIG_SENSORS_AKM8973 */
+
+#if CONFIG_SENSOR_LIS302DL
+	{
+	    .type = "lis302dl",
+	    .addr = 0x1d,
+	    .platform_data = &gsensor,
+	},
+#endif	/* CONFIG_SENSOR_LIS302DL */
+
 };
-
-
 
 #ifdef CONFIG_MSM_CAMERA
 static uint32_t camera_off_gpio_table[] = {
@@ -1187,7 +1261,7 @@ static void msm_camera_vreg_config(int vreg_en)
 		}
 	}
 }
-
+#ifdef (CONFIG_MT9T11X || CONFIG_OV5642)
 static int config_camera_on_gpios(void)
 {
 	int vreg_en = 1;
@@ -1221,16 +1295,7 @@ static struct msm_camera_device_platform_data msm_camera_device_data = {
 	.ioext.appphy = MSM_CLK_CTL_PHYS,
 	.ioext.appsz  = MSM_CLK_CTL_SIZE,
 };
-
-static struct msm_camera_sensor_flash_src msm_flash_src = {
-	.flash_sr_type = MSM_CAMERA_FLASH_SRC_PMIC,
-	._fsrc.pmic_src.num_of_src = 1,
-	._fsrc.pmic_src.low_current  = 30,
-	._fsrc.pmic_src.high_current = 100,
-	._fsrc.pmic_src.led_src_1 = 0,
-	._fsrc.pmic_src.led_src_2 = 0,
-	//._fsrc.pmic_src.pmic_set_current = pmic_set_flash_led_current,
-};
+#endif
 
 #ifdef CONFIG_MT9T11X
 static struct msm_camera_sensor_flash_data flash_mt9t11x = {
@@ -1284,102 +1349,51 @@ static struct platform_device msm_camera_sensor_ov5642 = {
 
 static u32 msm_calculate_batt_capacity(u32 current_voltage);
 
-typedef struct 
-{
-    u32 voltage;
-    u32 capacity;
-} BattFuelCapacity;
-
-static const BattFuelCapacity fuelCapacity[] = {
-   {3388, 0},                      
-   {3500, 10},                     
-   {3660, 20},                     
-   {3710, 30},                     
-   {3761, 40},                     
-   {3801, 50},                     
-   {3842, 60},                     
-   {3909, 70},                     
-   {3977, 80},                     
-   {4066, 90},                     
-   {4150, 100}                     
-};
-
 static struct msm_psy_batt_pdata msm_psy_batt_data = {
-	.voltage_min_design 	= 2800,
-	.voltage_max_design	= 4300,
-	.avail_chg_sources   	= AC_CHG | USB_CHG ,
-	.batt_technology        = POWER_SUPPLY_TECHNOLOGY_LION,
-	.calculate_capacity	= &msm_calculate_batt_capacity,
+    .voltage_min_design 	= 2800,
+    .voltage_max_design	= 4300,
+    .avail_chg_sources   	= AC_CHG | USB_CHG ,
+    .batt_technology        = POWER_SUPPLY_TECHNOLOGY_LION,
+    .calculate_capacity	= &msm_calculate_batt_capacity,
 };
 
 static u32 msm_calculate_batt_capacity(u32 current_voltage)
 {
-    u8 step = sizeof(fuelCapacity)/sizeof(BattFuelCapacity);
-    u8 table_count;
-
-    if (current_voltage <= fuelCapacity[0].voltage)
-    {
-        return 0;
-    }
-    else if (current_voltage >= fuelCapacity[step-1].voltage)
-    {
-        return 100;
-    }
-    else
-    {    
-        for (table_count = 1; table_count< step; table_count++)
-        {
-            if (current_voltage <= fuelCapacity[table_count].voltage)
-            {
-                return (fuelCapacity[table_count-1].capacity 
-                    + ((current_voltage - fuelCapacity[table_count-1].voltage)*10
-                    /(fuelCapacity[table_count].voltage - 
-                    fuelCapacity[table_count-1].voltage)));
-            }
-        }
-    }
-
-    printk("%s: error\n", __func__);
-    return 0;
+    u32 low_voltage   = msm_psy_batt_data.voltage_min_design;
+    u32 high_voltage  = msm_psy_batt_data.voltage_max_design;
+    
+    return (current_voltage - low_voltage) * 100
+    / (high_voltage - low_voltage);
 }
 
 static struct platform_device msm_batt_device = {
-	.name 		    = "msm-battery",
-	.id		    = -1,
-	.dev.platform_data  = &msm_psy_batt_data,
+    .name 		    = "msm-battery",
+    .id		    = -1,
+    .dev.platform_data  = &msm_psy_batt_data,
 };
 
-static struct i2c_board_info aux_i2c_devices[] = {
-	{
-		I2C_BOARD_INFO("si4708", 0x10),
-	},
-
-	{
-		.type = "taos",
-		.addr = 0x39,
-	},
-
+static struct platform_device msm_wlan_ar6000_pm_device = {
+    .name    = "wlan_ar6000_pm_dev",
+    .id    = 1,
+    .num_resources  = 0,
+    .resource  = NULL,
 };
 
-static struct lis302dl_platform_data gsensor = {
-	.gpio_intr1 = 84,
-	.gpio_intr2 = 85,
-	.scale = 2 ,
-	.int_active_low = 1,
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+static struct resource ram_console_resource[] = {
+    {
+	.start  = MSM_RAM_CONSOLE_PHYS,
+	.end  = MSM_RAM_CONSOLE_PHYS + MSM_RAM_CONSOLE_SIZE - 1,
+	.flags  = IORESOURCE_MEM,
+    },
 };
-
-
-static struct i2c_board_info aux2_i2c_devices[] = {
-	{
-		I2C_BOARD_INFO("akm8973", 0x1c),
-	},
-	{
-		.type = "lis302dl",
-		.addr = 0x1d,
-		.platform_data = &gsensor,
-	},
+static struct platform_device ram_console_device = {
+    .name = "ram_console",
+    .id = -1,
+    .num_resources  = ARRAY_SIZE(ram_console_resource),
+    .resource       = ram_console_resource,
 };
-
+#endif
 
 static struct platform_device *devices[] __initdata = {
 
@@ -1388,7 +1402,7 @@ static struct platform_device *devices[] __initdata = {
      * It is necessary to put here in order to support WoW.
      * Put it before MMC host controller in worst case 
      */
-//	&msm_wlan_ar6000_pm_device,
+	&msm_wlan_ar6000_pm_device,
 	
 	&msm_device_smd,
 	&msm_device_dmov,
@@ -1431,11 +1445,11 @@ static struct platform_device *devices[] __initdata = {
 	&msm_bt_power_device,
 #endif /* CONFIG_BT */
 	&msm_device_pmic_leds,
+	&android_leds,
 	&msm_device_snd,
 	&msm_device_adspdec,
 
-	&msm_bluesleep_device,
-	&msm_kgsl_3d0,
+//#ifdef (CONFIG_MT9T11X || CONFIG_OV5642)
 
 #ifdef CONFIG_MT9T11X
     &msm_camera_sensor_mt9t11x,
@@ -1444,9 +1458,14 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_OV5642
     &msm_camera_sensor_ov5642,
 #endif /* CONFIG_OV5642 */
-
+//#endif
+	&msm_bluesleep_device,
+	&msm_kgsl_3d0,
 	&hs_device,
 	&msm_batt_device,
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	&ram_console_device,
+#endif	
 };
 
 static struct msm_panel_common_pdata mdp_pdata = {
@@ -1708,18 +1727,19 @@ static void __init msm7x2x_init_mmc(void)
 			return;
 		}
 	}
+	//sdcc_gpio_init();
 #ifdef CONFIG_MMC_MSM_SDC1_SUPPORT
+	if (machine_is_msm7x27_ffa())
+	    msm7x2x_sdc1_data.nonremovable = 0;
 	msm_add_sdcc(1, &msm7x2x_sdc1_data);
 
 #endif /* CONFIG_MMC_MSM_SDC1_SUPPORT */
 
-//if (machine_is_msm7x25_surf() || machine_is_msm7x27_surf() ||
-//machine_is_msm7x27_ffa()) {
 #ifdef CONFIG_MMC_MSM_SDC2_SUPPORT
-		msm_sdcc_setup_gpio(2, 1);
-		msm_add_sdcc(2, &msm7x2x_sdc2_data);
+	if (machine_is_msm7x27_ffa())
+	    msm7x2x_sdc2_data.nonremovable = 1;
+	msm_add_sdcc(2, &msm7x2x_sdc2_data);
 #endif /* CONFIG_MMC_MSM_SDC2_SUPPORT */
-//}
 
 	if (machine_is_msm7x25_surf() || machine_is_msm7x27_surf()) {
 #ifdef CONFIG_MMC_MSM_SDC3_SUPPORT
@@ -1740,6 +1760,27 @@ static void __init msm7x2x_init_mmc(void)
 	|| defined(CONFIG_MMC_MSM_SDC2_SUPPORT)\
 	|| defined(CONFIG_MMC_MSM_SDC3_SUPPORT)\
 	|| defined(CONFIG_MMC_MSM_SDC4_SUPPORT)) */
+
+/* ATHENV+++ */
+static void (*wifi_status_notify_cb)(int card_present, void *dev_id);
+void *wifi_devid;
+static int msm_sdcc_register_status_notify(void (*callback)(int card_present, void *dev_id), void *dev_id)
+{	
+    wifi_status_notify_cb = callback;
+    wifi_devid = dev_id;
+    printk("%s: callback %p devid %p\n", __func__, callback, dev_id);
+    return 0;
+}
+
+void wifi_detect_change(int on)
+{
+    if (wifi_status_notify_cb) {
+	printk("%s: callback %p devid %p is called!!\n", __func__, wifi_status_notify_cb, wifi_devid);
+	wifi_status_notify_cb(on, wifi_devid);
+    }
+}
+EXPORT_SYMBOL(wifi_detect_change);
+/* ATHENV---*/
 
 
 static struct msm_pm_platform_data msm7x25_pm_data[MSM_PM_SLEEP_MODE_NR] = {
@@ -1824,6 +1865,32 @@ static void __init msm_device_i2c_init(void)
 }
 
 
+#define MSM_GPIO_USB3V3 21
+static unsigned usb_config_power_on = GPIO_CFG(MSM_GPIO_USB3V3, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA);
+static int init_usb3v3(void)
+{
+    int rc;
+    rc = gpio_tlmm_config(usb_config_power_on,GPIO_CFG_ENABLE);
+    if (rc) {
+	printk(KERN_ERR "%s: gpio_tlmm_config(%#x)=%d\n",__func__, MSM_GPIO_USB3V3, rc);
+	return -EIO;
+    }
+    rc = gpio_request(MSM_GPIO_USB3V3, "usb");
+    if(!rc)
+    {
+	gpio_direction_output(MSM_GPIO_USB3V3, 1);
+	gpio_set_value(MSM_GPIO_USB3V3, 1);
+	printk(KERN_ERR "gpio_request: %d ok!\n", MSM_GPIO_USB3V3);
+    }
+    else
+    {
+	printk(KERN_ERR "gpio_request: %d failed!\n", MSM_GPIO_USB3V3);
+    }
+    gpio_free(MSM_GPIO_USB3V3);
+    return 0;
+}
+
+						
 void msm_serial_debug_init(unsigned int base, int irq,
 		struct device *clk_device, int signal_irq);
 
@@ -1840,19 +1907,6 @@ static void usb_mpp_init(void)
 		if (rc)
 			pr_err("%s: configuring mpp pin"
 				"to enable 3.3V LDO failed\n", __func__);
-	}
-}
-
-static void msm7x27_wlan_init(void)
-{
-	int rc = 0;
-	/* TBD: if (machine_is_msm7x27_ffa_with_wcn1312()) */
-	if (machine_is_msm7x27_ffa()) {
-		rc = mpp_config_digital_out(3, MPP_CFG(MPP_DLOGIC_LVL_MSMP,
-				MPP_DLOGIC_OUT_CTRL_LOW));
-		if (rc)
-			printk(KERN_ERR "%s: return val: %d \n",
-				__func__, rc);
 	}
 }
 
@@ -1892,7 +1946,7 @@ static void __init msm7x2x_init(void)
 	/* The appropriate maximum replacement for 160000 is: */
 	/* msm7x2x_clock_data.max_axi_khz */
 	kgsl_3d0_pdata.pwr_data.pwrlevel[0].gpu_freq = 0;
-	kgsl_3d0_pdata.pwr_data.pwrlevel[0].bus_freq = 160000;
+	kgsl_3d0_pdata.pwr_data.pwrlevel[0].bus_freq = 160000000;
 	kgsl_3d0_pdata.pwr_data.init_level = 0;
 	kgsl_3d0_pdata.pwr_data.num_levels = 1;
 
@@ -1904,7 +1958,7 @@ static void __init msm7x2x_init(void)
 	kgsl_3d0_pdata.clk.name.pclk = "grp_pclk";
 	kgsl_3d0_pdata.imem_clk_name.clk = "imem_clk";
 
-	usb_mpp_init();
+	init_usb3v3();
 
 #ifdef CONFIG_USB_FUNCTION
 	msm_hsusb_pdata.swfi_latency =
@@ -1949,33 +2003,23 @@ static void __init msm7x2x_init(void)
 
 	msm_device_i2c_init();
 	i2c_register_board_info(0, i2c_devices, ARRAY_SIZE(i2c_devices));
-	i2c_register_board_info(1, aux_i2c_devices, ARRAY_SIZE(aux_i2c_devices));
-	i2c_register_board_info(2, aux2_i2c_devices, ARRAY_SIZE(aux2_i2c_devices));
+	
+	//platform_device_register(&keypad_device_mooncake);
 
-#ifdef CONFIG_SURF_FFA_GPIO_KEYPAD
-	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa())
-		platform_device_register(&keypad_device_7k_ffa);
-	else
-		platform_device_register(&keypad_device_surf);
-#endif
 	lcdc_lead_gpio_init();
 	
 	msm_fb_add_devices();
 
-#ifdef CONFIG_USB_EHCI_MSM
+#ifdef CONFIG_USB_EHCI_MSM_72K
 	msm7x2x_init_host();
 #endif /* CONFIG_USB_EHCI_MSM */
 
 	msm7x2x_init_mmc();
 	bt_power_init();
 
-	if (cpu_is_msm7x27())
-		msm_pm_set_platform_data(msm7x27_pm_data,
-					ARRAY_SIZE(msm7x27_pm_data));
-	else
-		msm_pm_set_platform_data(msm7x25_pm_data,
-					ARRAY_SIZE(msm7x25_pm_data));
-	msm7x27_wlan_init();
+	msm_pm_set_platform_data(msm7x27_pm_data, ARRAY_SIZE(msm7x27_pm_data));
+
+	//msm7x27_wlan_init();
 }
 
 static unsigned pmem_kernel_ebi1_size = PMEM_KERNEL_EBI1_SIZE;
@@ -2075,9 +2119,24 @@ static void __init msm7x2x_map_io(void)
 	if (socinfo_init() < 0)
 		BUG();
 
-#ifdef CONFIG_CACHE_L2X0
-	l2x0_init(MSM_L2CC_BASE, 0x0006801B, 0xfe000000);
-#endif /* CONFIG_CACHE_L2X0 */
+	#ifdef CONFIG_CACHE_L2X0
+	if (machine_is_msm7x27_surf() || machine_is_msm7x27_ffa() || machine_is_blade()) {
+	    /* 7x27 has 256KB L2 cache:
+	    64Kb/Way and 4-Way Associativity;
+	    evmon/parity/share disabled. */
+	    if ((SOCINFO_VERSION_MAJOR(socinfo_get_version()) > 1)
+		|| ((SOCINFO_VERSION_MAJOR(socinfo_get_version()) == 1)
+		&& (SOCINFO_VERSION_MINOR(socinfo_get_version()) >= 3)))
+		/* R/W latency: 4 cycles; */
+		l2x0_init(MSM_L2CC_BASE, 0x0006801B, 0xfe000000);
+	    else
+		/* R/W latency: 3 cycles; */
+		l2x0_init(MSM_L2CC_BASE, 0x00068012, 0xfe000000);
+	}
+	#endif
+	#ifdef CONFIG_CACHE_L2X0
+	l2x0_init(MSM_L2CC_BASE, 0x00068012, 0xfe000000);
+	#endif
 }
 
 #define ATAG_ZTEFTM 0x5d53cd73

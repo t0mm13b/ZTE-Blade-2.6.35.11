@@ -11,3 +11,8 @@ Important Info...
 
 Both points 4 and 5 above are broken SO NO CAMERA.. and anyway tis crappy! :P
 
+Amendment 6th May 2010.
+1) Cypress dropped. Synaptics I2C RMI now copied over from Staging drivers.
+2) LIS302DL sensor ... could be broken as there's no update to the source...
+3) No Camera! :p
+
