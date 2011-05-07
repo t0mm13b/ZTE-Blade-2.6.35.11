@@ -62,7 +62,7 @@
 #include "devices.h"
 #include "clock.h"
 #include "socinfo.h"
-#include "msm-keypad-devices.h"
+#include "board-zte-blade-keypad.c"
 #include "pm.h"
 #ifdef CONFIG_ARCH_MSM7X27
 #include <linux/msm_kgsl.h>
@@ -1402,7 +1402,7 @@ static struct platform_device *devices[] __initdata = {
      * It is necessary to put here in order to support WoW.
      * Put it before MMC host controller in worst case 
      */
-	&msm_wlan_ar6000_pm_device,
+	//&msm_wlan_ar6000_pm_device,
 	
 	&msm_device_smd,
 	&msm_device_dmov,
@@ -1428,6 +1428,10 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_USB_ANDROID_DIAG
 	&usb_diag_device,
 #endif /* CONFIG_USB_ANDROID_DIAG */
+
+#ifdef CONFIG_USB_F_SERIAL
+	&usb_gadget_fserial_device,
+#endif
 	&android_usb_device,
 #endif /* CONFIG_USB_ANDROID */
 
@@ -1910,6 +1914,19 @@ static void usb_mpp_init(void)
 	}
 }
 
+static void msm7x27_wlan_init(void)
+{
+    int rc = 0;
+    /* TBD: if (machine_is_msm7x27_ffa_with_wcn1312()) */
+    if (machine_is_msm7x27_ffa()) {
+	rc = mpp_config_digital_out(3, MPP_CFG(MPP_DLOGIC_LVL_MSMP,
+						MPP_DLOGIC_OUT_CTRL_LOW));
+						if (rc)
+						    printk(KERN_ERR "%s: return val: %d \n",
+							    __func__, rc);
+    }
+}
+
 static void __init msm7x2x_init(void)
 {
 	struct proc_dir_entry *entry;
@@ -1919,7 +1936,7 @@ static void __init msm7x2x_init(void)
 	msm_clock_init(msm_clocks_7x27, msm_num_clocks_7x27);
 
 	platform_add_devices(devices, ARRAY_SIZE(devices));
-
+#if defined(CONFIG_SMC91X)
 	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa()) {
 		smc91x_resources[0].start = 0x98000300;
 		smc91x_resources[0].end = 0x980003ff;
@@ -1935,7 +1952,7 @@ static void __init msm7x2x_init(void)
 				__func__);
 		}
 	}
-
+#endif
 	if (cpu_is_msm7x27())
 		msm7x2x_clock_data.max_axi_khz = 200000;
 
@@ -1959,7 +1976,9 @@ static void __init msm7x2x_init(void)
 	kgsl_3d0_pdata.imem_clk_name.clk = "imem_clk";
 
 	init_usb3v3();
-
+	//
+	usb_mpp_init();
+	
 #ifdef CONFIG_USB_FUNCTION
 	msm_hsusb_pdata.swfi_latency =
 		msm7x27_pm_data
@@ -2004,7 +2023,7 @@ static void __init msm7x2x_init(void)
 	msm_device_i2c_init();
 	i2c_register_board_info(0, i2c_devices, ARRAY_SIZE(i2c_devices));
 	
-	//platform_device_register(&keypad_device_mooncake);
+	platform_device_register(&keypad_device_mooncake);
 
 	lcdc_lead_gpio_init();
 	
@@ -2019,7 +2038,7 @@ static void __init msm7x2x_init(void)
 
 	msm_pm_set_platform_data(msm7x27_pm_data, ARRAY_SIZE(msm7x27_pm_data));
 
-	//msm7x27_wlan_init();
+	msm7x27_wlan_init();
 }
 
 static unsigned pmem_kernel_ebi1_size = PMEM_KERNEL_EBI1_SIZE;

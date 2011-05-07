@@ -207,4 +207,4 @@ obj-$(CONFIG_MSM_SHOW_RESUME_IRQ) += msm_show_resume_irq.o
 obj-$(CONFIG_BT_MSM_PINTEST)  += btpintest.o
 obj-$(CONFIG_ENABLE_ROMLITE)  += romlite_sec.o
 romlite_sec-objs := msm_romlite_sec.o msm_romlite_pa.o
-obj-$(CONFIG_MACH_BLADE) += board-zte-blade-keypad.o board-zte-blade.o devices-msm7x27.o msm_vibrator.o
+obj-$(CONFIG_MACH_BLADE) += board-zte-blade.o devices-msm7x27.o msm_vibrator.o
