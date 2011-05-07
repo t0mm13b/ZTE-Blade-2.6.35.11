@@ -2023,7 +2023,7 @@ static void __init msm7x2x_init(void)
 	msm_device_i2c_init();
 	i2c_register_board_info(0, i2c_devices, ARRAY_SIZE(i2c_devices));
 	
-	platform_device_register(&keypad_device_mooncake);
+	mooncake_init_keypad();
 
 	lcdc_lead_gpio_init();
 	
